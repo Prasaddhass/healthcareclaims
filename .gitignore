@@ -1,0 +1,68 @@
+# ── Secrets — NEVER commit these ────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# ── Node / Frontend ──────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/.eslintcache
+*.tsbuildinfo
+
+# ── Application data — user-generated content ────────────────
+uploads/*
+!uploads/.gitkeep
+ai_data/*
+!ai_data/chroma/.gitkeep
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# ── Temporary ────────────────────────────────────────────────
+*.tmp
+*.temp
+nul
+
+# ── IDEs ─────────────────────────────────────────────────────
+.idea/
+*.swp
+*.swo
+*~
+
+# ── PropelIQ-Copilot Framework ───────────────────────────────
+.github/*
+.propel/templates/*
+.vscode/mcp.json
+*/settings.local.json

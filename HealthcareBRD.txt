@@ -1,0 +1,21 @@
+Create a healthcare web application where I would like to maintain the CMS 1500 Healthcare claims. 
+
+Kindly consider the JSON file attached with (CMS_1500_Form_Field_Validation.json). It has all the fields of the Healthcare claims. Kindly consider this as input for creating the UI for adding a claim. Pls do the validation as mentioned in the JSON file.
+
+I would like to use the LLM, RAG, MCP, AI Agent, AI Agentic and other AI related concepts in the application. Pls ensure that the application is being built in a way to accommodate these requirements in the future. 
+
+The application must have the following.
+
+1. Login page with usual validation
+2. If username is "admin" and password is "admin", then it should land the page called "Claim Validation". Pls store the username and password in plain text in the DB tables. 
+3. The claim validation page should have the following fields such as ClaimId, PatientId, Insurance Name, Policy Id, CreatedOn, ValidationStatus. It should have the options to Edit, Delete, Validate and send the claims. It should also have an option to attach some PDF, doc, .txt files as the supporting document for the claim. 
+4. There must be another dashboard that should give the information such as How many claims are added recently by week, month. How may claims are validated and their reports.
+
+Technology stack
+
+1. Prefer any React supported libraries and tools for UI. 
+2. Python for Backend support. 
+3. MS-SQL server - DB connection string
+Server=localhost\sqlexpress;Database=HealthCareDB;Integrated Security=True;TrustServerCertificate=True;
+4. Use ADO approach for DB interaction and use stored procedure if required.
+

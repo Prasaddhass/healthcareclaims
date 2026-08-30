@@ -1,0 +1,455 @@
+{
+  "form": "CMS-1500",
+  "version": "02/12",
+  "validation_standard": "Baseline field-level validation; payer-specific edits must be layered on top.",
+  "fields": [
+    {
+      "item": "1",
+      "field_name": "Insurance Type",
+      "mandatory": "Situational",
+      "format_validation": "One selected payer/program: Medicare, Medicaid, TRICARE, CHAMPVA, Group Health Plan, FECA/Black Lung, Other.",
+      "max_length_or_size": "—",
+      "regular_expression": "Yes/No selection; payer-specific rules apply."
+    },
+    {
+      "item": "1a",
+      "field_name": "Insured's ID Number",
+      "mandatory": "Conditional",
+      "format_validation": "Required when Item 1 identifies a payer/program.",
+      "max_length_or_size": "Typically 1–30; payer-specific.",
+      "regular_expression": "^[A-Za-z0-9\\-\\.]+$ (payer-specific; do not enforce universally)"
+    },
+    {
+      "item": "2",
+      "field_name": "Patient's Name",
+      "mandatory": "Yes",
+      "format_validation": "Last name, first name, middle initial.",
+      "max_length_or_size": "Up to 60 characters recommended for data capture; payer/system may differ.",
+      "regular_expression": "^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$"
+    },
+    {
+      "item": "3",
+      "field_name": "Patient Birth Date",
+      "mandatory": "Yes",
+      "format_validation": "Date in MM/DD/YY on paper form; use a full date in system storage.",
+      "max_length_or_size": "8 characters (MM/DD/YY).",
+      "regular_expression": "^(0[1-9]|1[0-2])/(0[1-9]|[12]\\d|3[01])/\\d{2}$"
+    },
+    {
+      "item": "3",
+      "field_name": "Patient Sex",
+      "mandatory": "Yes",
+      "format_validation": "M, F, or payer-accepted value.",
+      "max_length_or_size": "1 character on paper.",
+      "regular_expression": "^[MF]$"
+    },
+    {
+      "item": "4",
+      "field_name": "Insured's Name",
+      "mandatory": "Conditional",
+      "format_validation": "Required when patient is not the insured; may be same as patient where applicable.",
+      "max_length_or_size": "Up to 60 characters recommended.",
+      "regular_expression": "^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$"
+    },
+    {
+      "item": "5",
+      "field_name": "Patient Address",
+      "mandatory": "Yes",
+      "format_validation": "Street address, city, state, ZIP, telephone.",
+      "max_length_or_size": "Address components are payer/system dependent.",
+      "regular_expression": "—"
+    },
+    {
+      "item": "6",
+      "field_name": "Patient Relationship to Insured",
+      "mandatory": "Yes",
+      "format_validation": "Self, Spouse, Child, Other.",
+      "max_length_or_size": "1 selected value.",
+      "regular_expression": "^(Self|Spouse|Child|Other)$"
+    },
+    {
+      "item": "7",
+      "field_name": "Insured's Address",
+      "mandatory": "Conditional",
+      "format_validation": "Required when different/required by payer.",
+      "max_length_or_size": "Address components are payer/system dependent.",
+      "regular_expression": "—"
+    },
+    {
+      "item": "9",
+      "field_name": "Other Insured's Name",
+      "mandatory": "Conditional",
+      "format_validation": "Complete when another health benefit plan exists.",
+      "max_length_or_size": "Up to 60 characters recommended.",
+      "regular_expression": "^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$"
+    },
+    {
+      "item": "9a",
+      "field_name": "Other Insured's Policy/Group Number",
+      "mandatory": "Conditional",
+      "format_validation": "Required when Item 9 is completed.",
+      "max_length_or_size": "Payer-specific.",
+      "regular_expression": "^[A-Za-z0-9\\-\\.]+$"
+    },
+    {
+      "item": "9d",
+      "field_name": "Insurance Plan/Program Name",
+      "mandatory": "Conditional",
+      "format_validation": "Plan/program name for other insurance.",
+      "max_length_or_size": "Payer-specific.",
+      "regular_expression": "^[\\w .&()'/-]+$"
+    },
+    {
+      "item": "10a",
+      "field_name": "Employment Related",
+      "mandatory": "Conditional",
+      "format_validation": "YES/NO when condition is employment related.",
+      "max_length_or_size": "2–3 characters.",
+      "regular_expression": "^(YES|NO)$"
+    },
+    {
+      "item": "10b",
+      "field_name": "Auto Accident",
+      "mandatory": "Conditional",
+      "format_validation": "YES/NO; state required when YES.",
+      "max_length_or_size": "2–3 characters.",
+      "regular_expression": "^(YES|NO)$"
+    },
+    {
+      "item": "10b",
+      "field_name": "Auto Accident State",
+      "mandatory": "Conditional",
+      "format_validation": "State where auto accident occurred when 10b=YES.",
+      "max_length_or_size": "2 characters.",
+      "regular_expression": "^[A-Z]{2}$"
+    },
+    {
+      "item": "10c",
+      "field_name": "Other Accident",
+      "mandatory": "Conditional",
+      "format_validation": "YES/NO when applicable.",
+      "max_length_or_size": "2–3 characters.",
+      "regular_expression": "^(YES|NO)$"
+    },
+    {
+      "item": "11",
+      "field_name": "Insured's Policy/Group/FECA Number",
+      "mandatory": "Yes",
+      "format_validation": "Policy/group/FECA number; payer-specific.",
+      "max_length_or_size": "Payer-specific.",
+      "regular_expression": "^[A-Za-z0-9\\-\\.]+$"
+    },
+    {
+      "item": "11a",
+      "field_name": "Insured DOB and Sex",
+      "mandatory": "Conditional",
+      "format_validation": "DOB and sex of insured; required when applicable.",
+      "max_length_or_size": "Date 8 chars; sex 1 char.",
+      "regular_expression": "—"
+    },
+    {
+      "item": "11b",
+      "field_name": "Other Claim ID",
+      "mandatory": "Conditional",
+      "format_validation": "Other claim identifier when designated by NUCC/payer.",
+      "max_length_or_size": "Payer-specific.",
+      "regular_expression": "^[A-Za-z0-9\\-\\.]+$"
+    },
+    {
+      "item": "11c",
+      "field_name": "Insurance Plan/Program Name",
+      "mandatory": "Conditional",
+      "format_validation": "Name of insurance plan/program.",
+      "max_length_or_size": "Payer-specific.",
+      "regular_expression": "^[\\w .&()'/-]+$"
+    },
+    {
+      "item": "11d",
+      "field_name": "Another Health Benefit Plan",
+      "mandatory": "Yes/Conditional",
+      "format_validation": "YES/NO. If YES, complete Items 9, 9a and 9d.",
+      "max_length_or_size": "2–3 characters.",
+      "regular_expression": "^(YES|NO)$"
+    },
+    {
+      "item": "12",
+      "field_name": "Patient/Authorized Person Signature",
+      "mandatory": "Conditional",
+      "format_validation": "Signature/authorization; electronic workflows may use authorization indicator.",
+      "max_length_or_size": "Payer/workflow specific.",
+      "regular_expression": "—"
+    },
+    {
+      "item": "13",
+      "field_name": "Insured/Authorized Person Signature",
+      "mandatory": "Conditional",
+      "format_validation": "Assignment of benefits authorization.",
+      "max_length_or_size": "Payer/workflow specific.",
+      "regular_expression": "—"
+    },
+    {
+      "item": "14",
+      "field_name": "Current Illness/Injury/Pregnancy Date + Qualifier",
+      "mandatory": "Conditional",
+      "format_validation": "Date and qualifier when applicable.",
+      "max_length_or_size": "Date 8 chars.",
+      "regular_expression": "^(0[1-9]|1[0-2])/(0[1-9]|[12]\\d|3[01])/\\d{2}$"
+    },
+    {
+      "item": "15",
+      "field_name": "Other Date + Qualifier",
+      "mandatory": "Conditional",
+      "format_validation": "Other relevant date when applicable.",
+      "max_length_or_size": "Date 8 chars.",
+      "regular_expression": "^(0[1-9]|1[0-2])/(0[1-9]|[12]\\d|3[01])/\\d{2}$"
+    },
+    {
+      "item": "16",
+      "field_name": "Unable to Work Dates",
+      "mandatory": "Conditional",
+      "format_validation": "From/to dates when patient unable to work.",
+      "max_length_or_size": "Each date 8 chars.",
+      "regular_expression": "^(0[1-9]|1[0-2])/(0[1-9]|[12]\\d|3[01])/\\d{2}$"
+    },
+    {
+      "item": "17",
+      "field_name": "Referring Provider/Other Source Name",
+      "mandatory": "Conditional",
+      "format_validation": "Name of referring provider/source when applicable.",
+      "max_length_or_size": "Provider/payer specific.",
+      "regular_expression": "^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$"
+    },
+    {
+      "item": "17b",
+      "field_name": "Referring Provider NPI",
+      "mandatory": "Conditional",
+      "format_validation": "NPI of referring provider when required.",
+      "max_length_or_size": "10 digits.",
+      "regular_expression": "^\\d{10}$"
+    },
+    {
+      "item": "18",
+      "field_name": "Hospitalization Dates",
+      "mandatory": "Conditional",
+      "format_validation": "From/to dates related to current services.",
+      "max_length_or_size": "Each date 8 chars.",
+      "regular_expression": "^(0[1-9]|1[0-2])/(0[1-9]|[12]\\d|3[01])/\\d{2}$"
+    },
+    {
+      "item": "19",
+      "field_name": "Additional Claim Information",
+      "mandatory": "Conditional",
+      "format_validation": "NUCC-designated additional information; payer-specific.",
+      "max_length_or_size": "Payer-specific.",
+      "regular_expression": "—"
+    },
+    {
+      "item": "20",
+      "field_name": "Outside Lab / Charges",
+      "mandatory": "Conditional",
+      "format_validation": "YES/NO and charges when applicable to anti-markup rules.",
+      "max_length_or_size": "YES/NO; amount numeric.",
+      "regular_expression": "^(YES|NO)$"
+    },
+    {
+      "item": "21",
+      "field_name": "Diagnosis Codes A-L",
+      "mandatory": "Yes",
+      "format_validation": "ICD diagnosis codes; relate pointers to service lines.",
+      "max_length_or_size": "Up to 12 codes; code length depends on ICD version.",
+      "regular_expression": "^[A-Z0-9.]+$"
+    },
+    {
+      "item": "22",
+      "field_name": "Resubmission Code / Original Reference Number",
+      "mandatory": "Conditional",
+      "format_validation": "Used for corrected/replacement claims when applicable.",
+      "max_length_or_size": "Payer-specific; resubmission code generally 1 digit.",
+      "regular_expression": "—"
+    },
+    {
+      "item": "23",
+      "field_name": "Prior Authorization Number",
+      "mandatory": "Conditional",
+      "format_validation": "Authorization number when required.",
+      "max_length_or_size": "Payer-specific.",
+      "regular_expression": "^[A-Za-z0-9\\-\\.]+$"
+    },
+    {
+      "item": "24A",
+      "field_name": "Date(s) of Service",
+      "mandatory": "Yes",
+      "format_validation": "From/to service dates.",
+      "max_length_or_size": "Each date 8 chars.",
+      "regular_expression": "^(0[1-9]|1[0-2])/(0[1-9]|[12]\\d|3[01])/\\d{2}$"
+    },
+    {
+      "item": "24B",
+      "field_name": "Place of Service",
+      "mandatory": "Yes",
+      "format_validation": "2-digit POS code.",
+      "max_length_or_size": "2 digits.",
+      "regular_expression": "^\\d{2}$"
+    },
+    {
+      "item": "24C",
+      "field_name": "EMG",
+      "mandatory": "Conditional",
+      "format_validation": "Emergency indicator when applicable.",
+      "max_length_or_size": "1 digit.",
+      "regular_expression": "^\\d$"
+    },
+    {
+      "item": "24D",
+      "field_name": "CPT/HCPCS Procedure Code",
+      "mandatory": "Yes",
+      "format_validation": "Procedure/service/supply code.",
+      "max_length_or_size": "Typically 5 characters for CPT/HCPCS; payer rules apply.",
+      "regular_expression": "^[A-Z0-9]{5}$"
+    },
+    {
+      "item": "24E",
+      "field_name": "Diagnosis Pointer",
+      "mandatory": "Yes",
+      "format_validation": "Pointer to diagnosis A-L in Item 21.",
+      "max_length_or_size": "Typically 1–4 pointers; payer/format rules apply.",
+      "regular_expression": "^[A-L0-9, ]+$"
+    },
+    {
+      "item": "24F",
+      "field_name": "Line Charge",
+      "mandatory": "Yes",
+      "format_validation": "Charge for service line.",
+      "max_length_or_size": "Numeric currency; max varies by system.",
+      "regular_expression": "^\\d+(\\.\\d{1,2})?$"
+    },
+    {
+      "item": "24G",
+      "field_name": "Days/Units",
+      "mandatory": "Yes",
+      "format_validation": "Number of days or units.",
+      "max_length_or_size": "Numeric; payer-specific max.",
+      "regular_expression": "^\\d+(\\.\\d{1,3})?$"
+    },
+    {
+      "item": "24H",
+      "field_name": "EPSDT/Family Plan",
+      "mandatory": "Conditional",
+      "format_validation": "EPSDT/family plan indicator when applicable.",
+      "max_length_or_size": "1 character/code.",
+      "regular_expression": "^[A-Za-z0-9]$"
+    },
+    {
+      "item": "24I",
+      "field_name": "ID Qualifier",
+      "mandatory": "Conditional",
+      "format_validation": "Qualifier for rendering provider ID in 24J.",
+      "max_length_or_size": "2 characters/code.",
+      "regular_expression": "^[A-Z0-9]{1,2}$"
+    },
+    {
+      "item": "24J",
+      "field_name": "Rendering Provider ID",
+      "mandatory": "Conditional",
+      "format_validation": "Rendering provider identifier; NPI commonly used.",
+      "max_length_or_size": "10 digits for NPI where applicable.",
+      "regular_expression": "^\\d{10}$"
+    },
+    {
+      "item": "25",
+      "field_name": "Federal Tax ID",
+      "mandatory": "Yes",
+      "format_validation": "EIN or SSN, as applicable.",
+      "max_length_or_size": "EIN 9 digits; SSN 9 digits.",
+      "regular_expression": "^\\d{9}$"
+    },
+    {
+      "item": "26",
+      "field_name": "Patient Account Number",
+      "mandatory": "Conditional",
+      "format_validation": "Provider-assigned patient account number.",
+      "max_length_or_size": "Payer/provider system-specific.",
+      "regular_expression": "^[A-Za-z0-9\\-\\.]+$"
+    },
+    {
+      "item": "27",
+      "field_name": "Accept Assignment",
+      "mandatory": "Yes",
+      "format_validation": "YES/NO; Medicare government claims have specific requirements.",
+      "max_length_or_size": "2–3 characters.",
+      "regular_expression": "^(YES|NO)$"
+    },
+    {
+      "item": "28",
+      "field_name": "Total Charge",
+      "mandatory": "Yes",
+      "format_validation": "Total of service-line charges.",
+      "max_length_or_size": "Numeric currency; system-specific max.",
+      "regular_expression": "^\\d+(\\.\\d{1,2})?$"
+    },
+    {
+      "item": "29",
+      "field_name": "Amount Paid",
+      "mandatory": "Conditional",
+      "format_validation": "Amount already paid by patient/other payer.",
+      "max_length_or_size": "Numeric currency.",
+      "regular_expression": "^\\d+(\\.\\d{1,2})?$"
+    },
+    {
+      "item": "30",
+      "field_name": "Reserved for NUCC Use",
+      "mandatory": "No",
+      "format_validation": "Reserved; do not populate unless officially directed.",
+      "max_length_or_size": "N/A",
+      "regular_expression": "—"
+    },
+    {
+      "item": "31",
+      "field_name": "Physician/Supplier Signature + Date",
+      "mandatory": "Yes/Conditional",
+      "format_validation": "Certification signature and date.",
+      "max_length_or_size": "Date 8 chars; signature workflow-specific.",
+      "regular_expression": "—"
+    },
+    {
+      "item": "32",
+      "field_name": "Service Facility Location",
+      "mandatory": "Conditional",
+      "format_validation": "Name/address of facility where services rendered.",
+      "max_length_or_size": "Address components system-specific.",
+      "regular_expression": "—"
+    },
+    {
+      "item": "32a",
+      "field_name": "Service Facility NPI",
+      "mandatory": "Conditional",
+      "format_validation": "NPI of service facility when required.",
+      "max_length_or_size": "10 digits.",
+      "regular_expression": "^\\d{10}$"
+    },
+    {
+      "item": "33",
+      "field_name": "Billing Provider Info & Phone",
+      "mandatory": "Yes",
+      "format_validation": "Billing provider name/address/telephone.",
+      "max_length_or_size": "Address/phone system-specific.",
+      "regular_expression": "—"
+    },
+    {
+      "item": "33a",
+      "field_name": "Billing Provider NPI",
+      "mandatory": "Yes",
+      "format_validation": "Billing provider NPI.",
+      "max_length_or_size": "10 digits.",
+      "regular_expression": "^\\d{10}$"
+    },
+    {
+      "item": "33b",
+      "field_name": "Billing Provider ID Qualifier/ID",
+      "mandatory": "Conditional",
+      "format_validation": "Qualifier and payer-assigned provider identifier when required.",
+      "max_length_or_size": "Payer-specific.",
+      "regular_expression": "^[A-Z0-9]{1,2}$"
+    }
+  ]
+}
