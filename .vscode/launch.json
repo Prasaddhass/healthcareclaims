@@ -1,0 +1,103 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // ── 1. Debug FastAPI (uvicorn) ─────────────────────────────────────────────
+    // Starts the backend with the VS Code debugger attached.
+    // Set breakpoints anywhere in routers/, services/, repositories/, etc.
+    {
+      "name": "Python Debugger: FastAPI (uvicorn)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "main:app",
+        "--reload",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/.env",
+      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    // ── 2. Debug a single pytest file ─────────────────────────────────────────
+    // Right-click any test file → "Debug Test File" or select this config.
+    {
+      "name": "🧪 Pytest — Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "${file}",
+        "-v",
+        "--tb=short",
+        "--no-header",
+        "-s" // shows print() / logging output in debug console
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/.env",
+      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    // ── 3. Debug ALL backend tests ─────────────────────────────────────────────
+    {
+      "name": "🧪 Pytest — All Backend Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/",
+        "-v",
+        "--tb=short",
+        "-s"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/.env",
+      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    // ── 4. Debug AI service tests ──────────────────────────────────────────────
+    {
+      "name": "🤖 Pytest — AI Service Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "ai_service/tests/",
+        "-v",
+        "--tb=short",
+        "-s"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/.env",
+      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    // ── 5. Attach to a running uvicorn (remote / already running process) ──────
+    // First start uvicorn manually:
+    //   python -m debugpy --listen 5678 --wait-for-client -m uvicorn main:app --reload
+    // Then attach with this config.
+    {
+      "name": "🔗 Attach to Running uvicorn (port 5678)",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/backend",
+          "remoteRoot": "${workspaceFolder}/backend"
+        }
+      ],
+      "justMyCode": true
+    }
+  ]
+}
