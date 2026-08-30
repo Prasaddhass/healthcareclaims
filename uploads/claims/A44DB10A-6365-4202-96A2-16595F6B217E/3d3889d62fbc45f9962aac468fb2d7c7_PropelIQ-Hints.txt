@@ -1,0 +1,112 @@
+Prasad.Dhass@kanini.com, Githubkanini@2026
+
+https://github.com/kanini/PropelIQ-Stub
+
+Clone path - 
+
+git@github.com:kanini/PropelIQ-Stub-Copilot.git
+https://github.com/kanini/PropelIQ-Stub-Copilot.git
+
+Path: D:\Learning\Propel_IQ
+
+Steps:
+
+1. Get into the Git Hub portal - https://github.com/kanini/PropelIQ-Stub using Kanini's GitHub credentials
+
+2. Clone the repository to your local machine - 
+Clone path - https://github.com/kanini/PropelIQ-Stub-Copilot.git
+
+3. Open the VS code and open the folder to verify all the files are downloaded
+
+4. Open the Context7 URL to get the API key by signing up with Kanini's GitHub credential
+
+https://context7.com
+
+5. Copy and paste the API key (from above step) and paste in the against the key "CONTEXT7_API_KEY" of .env file - 
+
+CONTEXT7_API_KEY = XXXXXXXXXXXX
+
+ctx7sk-81e7182f-ccdf-4632-be15-eaaa04bf0c0c
+
+6. Add the following entries to your project's `.gitignore` file to prevent committing sensitive configuration:
+
+.env
+.github/*
+.propel/templates/*
+.vscode/mcp.json
+
+then save the file
+
+7. Click Ctrl+Alt+I to open the prompt/chat window, then type "/prompts"
+
+8. It asks you to select the option ".github/prompts/"
+
+Note: There is a file "README.md" which has all the high-level information about PropelIQ. 
+
+
+=============================================================================
+
+New project
+
+
+1. Create the specifications by uploading the requirements document (The document should be either .txt or .md - e.g.bsrdoc_v1.md )
+Note: Place the file in the root folder - D:\Propel_IQ\PropelIQ-Stub-Copilot
+
+2. Using slash command in the Prompt/chat window, we can generate the specifications 
+
+/create-spec #bsrdoc_v1.md
+
+The above step will create the spec.md file in the folder - D:\Propel_IQ\PropelIQ-Stub-Copilot\.propel\context\docs
+
+=================
+
+Green-Field
+==========
+ 
+Create-spec
+design-arch
+design-model
+create-epics
+create-stories
+plan-tasks
+implement
+review/PR
+ 
+UI Track - create-figma-spec -> generate-wireframe ->generate-figma
+QA track - create-test-plan -> create-automation-test -> generate-playwright-scripts
+ 
+Brown-Field
+==========
+analyze-codebase
+design-model
+create-stories
+plan-tasks
+implement
+review/PR
+ 
+Mitigation: codebase analysis + plan-first blueprint before implementation
+ 
+
+===========================================================
+
+1. create-spec #testbsrd.md
+Here, we specify the name of the file - testbsrd.md that has the content of the system requirements or project requirements
+
+2. Modes of the Agentic modes - Ask, Edit and Agent mode
+		- Ask - least consumption - where I have a question or prompt to ask
+		- Edit -High consumption (but less compared to Agentic) Where you are trying to add to the existing code such as adding a method to the existing class, refactoring the code 
+		- Agentic - Higher consumption - Address the complex issues, it might lead to multiple edits across the files of your application
+		- This consumption is also known as "Token burnout"
+
+What is propel-IQ
+
+		- It is a framework
+		- It has a list of precompiled prompts
+		- Each prompt is meant for specific role and specific phase of the SDLC
+		- Modular prompts - Execute them and have a human-in-the-loop
+		- It uses the approach called "Multi-agent responsibility", e.g. it uses discovery agent, a design agent, an architect agent etc.,
+		
+				
+		
+
+3.
