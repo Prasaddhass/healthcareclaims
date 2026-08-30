@@ -1,0 +1,7 @@
+langchain>=0.2.0
+langchain-openai
+langchain-community
+chromadb>=0.5.0
+pypdf2
+python-dotenv
+langgraph>=0.1.0
