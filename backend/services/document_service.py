@@ -12,6 +12,7 @@ from utils.file_utils import validate_extension, validate_size
 
 logger = logging.getLogger(__name__)
 MAX_DOCUMENTS_PER_CLAIM = 5
+DOCUMENT_TAGS = {'PolicyDocument', 'ProviderContractAgreement', 'InsuranceID', 'MISC'}
 
 
 class DocumentService:
@@ -19,9 +20,21 @@ class DocumentService:
         self._db = db
         self._files = files
 
-    def upload(self, claim_id: str, filename: str, content: bytes, user_id: int) -> DocumentUploadResponse:
+    def upload(
+        self,
+        claim_id: str,
+        filename: str,
+        content: bytes,
+        document_tag: str,
+        user_id: int,
+    ) -> DocumentUploadResponse:
         extension = validate_extension(filename)
         validate_size(len(content))
+        if document_tag not in DOCUMENT_TAGS:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=f'Unsupported document tag: {document_tag}',
+            )
 
         existing = self.list_documents(claim_id).documents
         if len(existing) >= MAX_DOCUMENTS_PER_CLAIM:
@@ -34,7 +47,7 @@ class DocumentService:
         try:
             rows = self._db.execute_sp(
                 'sp_AttachDocument',
-                (claim_id, filename, file_path, extension.lstrip('.'), len(content), user_id),
+                (claim_id, filename, file_path, extension.lstrip('.'), document_tag, len(content), user_id),
             )
         except Exception as exc:
             self._files.delete(file_path)
@@ -47,7 +60,12 @@ class DocumentService:
             raise RuntimeError('Database error') from exc
 
         document_id = int(rows[0].get('DocumentId', 0)) if rows else 0
-        return DocumentUploadResponse(document_id=document_id, file_name=filename, file_size=len(content))
+        return DocumentUploadResponse(
+            document_id=document_id,
+            file_name=filename,
+            file_size=len(content),
+            document_tag=document_tag,
+        )
 
     def list_documents(self, claim_id: str) -> DocumentListResponse:
         try:
@@ -91,6 +109,7 @@ class DocumentService:
             document_id=int(row.get('DocumentId', 0)),
             file_name=str(row.get('FileName', '')),
             file_type=str(row.get('FileType', '')).lower(),
+            document_tag=str(row.get('DocumentTag', 'MISC')),
             file_size_bytes=int(row.get('FileSizeBytes', 0)),
             uploaded_on=row.get('UploadedOn'),
         )

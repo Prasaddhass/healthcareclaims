@@ -1,7 +1,7 @@
 """Document upload, listing, download, and delete endpoints."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 
 from dependencies import get_current_user, get_db
@@ -35,12 +35,19 @@ def list_documents(claim_id: str, service: DocumentService = Depends(_get_servic
 async def upload_document(
     claim_id: str,
     file: UploadFile = File(...),
+    document_tag: str = Form('MISC'),
     current_user: UserSchema = Depends(get_current_user),
     service: DocumentService = Depends(_get_service),
 ) -> DocumentUploadResponse:
     try:
         content = await file.read()
-        return service.upload(claim_id=claim_id, filename=file.filename or 'document', content=content, user_id=current_user.user_id)
+        return service.upload(
+            claim_id=claim_id,
+            filename=file.filename or 'document',
+            content=content,
+            document_tag=document_tag,
+            user_id=current_user.user_id,
+        )
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Database error') from exc
 

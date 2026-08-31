@@ -1,5 +1,5 @@
 /**
- * FormActionBar — sticky bottom bar with Prev / Next / Save Draft / Submit.
+ * FormActionBar — sticky bottom bar with Prev / Next / Save Draft / Validate / Submit.
  * Stays visible on all 7 steps without scrolling.
  */
 import React from 'react';
@@ -12,6 +12,7 @@ interface FormActionBarProps {
   onPrev:         () => void;
   onNext:         () => void;
   onSaveDraft:    () => void;
+  onValidate:     () => void;
   onSubmit:       () => void;
 }
 
@@ -21,6 +22,7 @@ const FormActionBar: React.FC<FormActionBarProps> = ({
   onPrev,
   onNext,
   onSaveDraft,
+  onValidate,
   onSubmit,
 }) => {
   const isFirst = currentStep === 0;
@@ -56,6 +58,13 @@ const FormActionBar: React.FC<FormActionBarProps> = ({
           data-testid="btn-save-draft"
         >
           Save Draft
+        </Button>
+        <Button
+          disabled={isSubmitting}
+          onClick={onValidate}
+          data-testid="btn-validate"
+        >
+          Validate
         </Button>
 
         {isLast ? (

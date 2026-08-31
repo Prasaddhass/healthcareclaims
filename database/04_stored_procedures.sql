@@ -359,6 +359,19 @@ GO
 -- ============================================================
 -- sp_UpsertClaimServiceLine — insert or update a single service line
 -- ============================================================
+CREATE OR ALTER PROCEDURE dbo.sp_ClearClaimDetail
+    @ClaimId UNIQUEIDENTIFIER
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DELETE FROM dbo.ClaimDiagnosis WHERE ClaimId = @ClaimId;
+    DELETE FROM dbo.ClaimServiceLines WHERE ClaimId = @ClaimId;
+END;
+GO
+
+-- ============================================================
+-- sp_UpsertClaimServiceLine — insert or update a single service line
+-- ============================================================
 CREATE OR ALTER PROCEDURE dbo.sp_UpsertClaimServiceLine
     @ClaimId             UNIQUEIDENTIFIER,
     @LineSequence        INT,
@@ -468,6 +481,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_AttachDocument
     @FileName      NVARCHAR(255),
     @FilePath      NVARCHAR(500),
     @FileType      NVARCHAR(10),
+    @DocumentTag   NVARCHAR(30),
     @FileSizeBytes BIGINT,
     @UploadedBy    INT
 AS
@@ -481,8 +495,8 @@ BEGIN
         RAISERROR('Maximum 5 documents per claim allowed.', 16, 1);
         RETURN;
     END;
-    INSERT INTO dbo.ClaimDocuments (ClaimId, FileName, FilePath, FileType, FileSizeBytes, UploadedBy)
-    VALUES (@ClaimId, @FileName, @FilePath, @FileType, @FileSizeBytes, @UploadedBy);
+    INSERT INTO dbo.ClaimDocuments (ClaimId, FileName, FilePath, FileType, DocumentTag, FileSizeBytes, UploadedBy)
+    VALUES (@ClaimId, @FileName, @FilePath, @FileType, @DocumentTag, @FileSizeBytes, @UploadedBy);
     SELECT SCOPE_IDENTITY() AS DocumentId;
 END;
 GO
@@ -495,7 +509,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_GetDocuments
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT DocumentId, FileName, FileType, FileSizeBytes, UploadedOn
+    SELECT DocumentId, FileName, FileType, DocumentTag, FileSizeBytes, UploadedOn
     FROM   dbo.ClaimDocuments
     WHERE  ClaimId = @ClaimId
     ORDER BY UploadedOn DESC;
@@ -511,7 +525,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_GetDocumentById
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT DocumentId, FileName, FilePath, FileType, FileSizeBytes, UploadedOn
+    SELECT DocumentId, FileName, FilePath, FileType, DocumentTag, FileSizeBytes, UploadedOn
     FROM   dbo.ClaimDocuments
     WHERE  DocumentId = @DocumentId AND ClaimId = @ClaimId;
 END;

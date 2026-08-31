@@ -9,6 +9,7 @@ export interface UploadDocumentResponse {
   document_id: number;
   file_name: string;
   file_size: number;
+  document_tag: 'PolicyDocument' | 'ProviderContractAgreement' | 'InsuranceID' | 'MISC';
 }
 
 export interface DownloadDocumentResult {
@@ -28,10 +29,12 @@ export const documentsApi = {
   uploadDocument: (
     claimId: string,
     file: File,
+    documentTag: UploadDocumentResponse['document_tag'],
     onProgress?: (percent: number) => void,
   ): Promise<UploadDocumentResponse> => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('document_tag', documentTag);
     return api
       .post(`/api/claims/${claimId}/documents`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },

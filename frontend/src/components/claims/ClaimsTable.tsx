@@ -56,7 +56,7 @@ const ClaimsTable: React.FC<ClaimsTableProps> = ({
     { title: 'Insurance', dataIndex: 'insurance_name', key: 'insurance_name', width: 180 },
     { title: 'Policy', dataIndex: 'policy_id', key: 'policy_id', width: 130 },
     { title: 'Status', dataIndex: 'validation_status', key: 'status', width: 120, render: (status: string) => <StatusBadge status={status} /> },
-    { title: 'Sent On', dataIndex: 'sent_on', key: 'sent_on', width: 160, render: (value: string | null) => (value ? new Date(value).toLocaleDateString() : '?') },
+    { title: 'Sent On', dataIndex: 'sent_on', key: 'sent_on', width: 160, render: (value: string | null) => (value ? new Date(value).toLocaleDateString() : '-') },
     { title: 'Created', dataIndex: 'created_on', key: 'created_on', width: 160, sorter: true, render: (value: string | null) => (value ? new Date(value).toLocaleDateString() : '?') },
     {
       title: 'Actions',

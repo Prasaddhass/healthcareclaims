@@ -1,12 +1,20 @@
 import React from 'react';
 import { InboxOutlined } from '@ant-design/icons';
-import { message, Typography, Upload } from 'antd';
+import { message, Select, Space, Typography, Upload } from 'antd';
 import type { UploadProps } from 'antd/es/upload/interface';
 import { documentsApi } from '@/api/documentsApi';
 
 const { Text } = Typography;
 const { Dragger } = Upload;
 type CustomRequestOptions = Parameters<NonNullable<UploadProps['customRequest']>>[0];
+type DocumentTag = 'PolicyDocument' | 'ProviderContractAgreement' | 'InsuranceID' | 'MISC';
+
+const DOCUMENT_TAG_OPTIONS = [
+  { value: 'PolicyDocument', label: 'Policy Document' },
+  { value: 'ProviderContractAgreement', label: 'Provider Contract Agreement' },
+  { value: 'InsuranceID', label: 'Insurance ID' },
+  { value: 'MISC', label: 'MISC' },
+];
 
 export const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.png'];
 export const MAX_SIZE_BYTES = 10_485_760;
@@ -19,6 +27,7 @@ interface FileUploadZoneProps {
 
 const FileUploadZone: React.FC<FileUploadZoneProps> = ({ claimId, documentCount, onUploaded }) => {
   const disabled = documentCount >= 5;
+  const [documentTag, setDocumentTag] = React.useState<DocumentTag>('MISC');
 
   const beforeUpload: UploadProps['beforeUpload'] = (file) => {
     const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
@@ -36,7 +45,7 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ claimId, documentCount,
   const customRequest = async (options: CustomRequestOptions) => {
     const { file, onError, onSuccess } = options;
     try {
-      await documentsApi.uploadDocument(claimId, file as File, (percent) => {
+      await documentsApi.uploadDocument(claimId, file as File, documentTag, (percent) => {
         options.onProgress?.({ percent });
       });
       onSuccess?.({}, new XMLHttpRequest());
@@ -50,6 +59,14 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ claimId, documentCount,
 
   return (
     <div data-testid="file-upload-zone">
+      <Space direction="vertical" size="small" style={{ width: '100%' }}>
+        <Select
+          aria-label="Document tag"
+          value={documentTag}
+          options={DOCUMENT_TAG_OPTIONS}
+          disabled={disabled}
+          onChange={(value: DocumentTag) => setDocumentTag(value)}
+        />
       <Dragger
         accept={ALLOWED_EXTENSIONS.join(',')}
         disabled={disabled}
@@ -66,6 +83,7 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ claimId, documentCount,
         <p className="ant-upload-text">Drop files here or click to upload</p>
         <Text type="secondary">Up to 5 documents per claim. Maximum file size: 10 MB.</Text>
       </Dragger>
+      </Space>
     </div>
   );
 };

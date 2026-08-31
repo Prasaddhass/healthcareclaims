@@ -42,6 +42,7 @@ const ClaimFormPage: React.FC = () => {
     prevStep,
     saveDraft,
     submitClaim,
+    validateClaim,
     loadClaim,
     isEditMode,
   } = useClaimForm(claimId);
@@ -82,6 +83,7 @@ const ClaimFormPage: React.FC = () => {
         onPrev={prevStep}
         onNext={nextStep}
         onSaveDraft={() => void saveDraft()}
+        onValidate={() => void validateClaim()}
         onSubmit={() => void submitClaim()}
       />
     </FormProvider>

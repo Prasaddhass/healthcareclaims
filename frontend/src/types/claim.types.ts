@@ -14,6 +14,7 @@ export interface DocumentItem {
   document_id: number;
   file_name: string;
   file_type: string;
+  document_tag: 'PolicyDocument' | 'ProviderContractAgreement' | 'InsuranceID' | 'MISC';
   file_size_bytes: number;
   uploaded_on: string;
 }
@@ -70,6 +71,6 @@ export interface ClaimServiceLine {
 export interface ClaimDetailResponse {
   header: Record<string, unknown>;
   diagnosis: ClaimDiagnosis[];
-  serviceLines: ClaimServiceLine[];
+  service_lines: ClaimServiceLine[];
   documents: DocumentItem[];
 }

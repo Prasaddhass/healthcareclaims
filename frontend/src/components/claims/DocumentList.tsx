@@ -85,6 +85,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ claimId, documents, onDelet
                   <Space>
                     <Text strong>{item.file_name}</Text>
                     <Tag color={config.color}>{config.label}</Tag>
+                    <Tag>{item.document_tag}</Tag>
                   </Space>
                 }
                 description={

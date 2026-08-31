@@ -198,6 +198,8 @@ BEGIN
         FilePath      NVARCHAR(500)    NOT NULL,
         FileType      NVARCHAR(10)     NOT NULL
                       CONSTRAINT CHK_Doc_FileType CHECK (FileType IN ('pdf','doc','docx','txt')),
+        DocumentTag   NVARCHAR(30)     NOT NULL CONSTRAINT DF_ClaimDocuments_DocumentTag DEFAULT 'MISC'
+                  CONSTRAINT CHK_Doc_DocumentTag CHECK (DocumentTag IN ('PolicyDocument','ProviderContractAgreement','InsuranceID','MISC')),
         FileSizeBytes BIGINT           NOT NULL,
         UploadedOn    DATETIME2        NOT NULL CONSTRAINT DF_ClaimDocs_UploadedOn DEFAULT GETUTCDATE(),
         UploadedBy    INT              NOT NULL REFERENCES dbo.Users(UserId)

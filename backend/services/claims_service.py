@@ -194,6 +194,10 @@ class ClaimsService:
     ) -> ClaimUpdatedResponse:
         self._upsert_form_data(claim_id, payload)
 
+        # A form submission is the full current state, so removed rows must not
+        # survive a later edit and affect validation or payment calculations.
+        self._db.execute_sp_no_result("sp_ClearClaimDetail", (claim_id,))
+
         # Re-upsert diagnosis
         filled_dx = [d for d in payload.diagnosis if d.icd_code and d.icd_code.strip()]
         for seq, dx in enumerate(filled_dx, start=1):
