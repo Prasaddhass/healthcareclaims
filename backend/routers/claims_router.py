@@ -8,7 +8,7 @@ from dependencies import get_current_user, get_db
 from repositories.db_repository import DBRepository
 from schemas.auth_schemas import UserSchema
 from schemas.claim_schemas import ClaimCreateRequest, ClaimCreatedResponse, ClaimDetailResponse, ClaimsListResponse, ClaimUpdatedResponse, SendResult, ValidationResult
-from services.claims_service import ClaimsService
+from services.claims_service import ClaimsService, DenialClaimDetail
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
@@ -88,6 +88,14 @@ def validate_claim(
     service: ClaimsService = Depends(_get_service),
 ) -> ValidationResult:
     return service.validate_claim(claim_id=claim_id, username=current_user.username)
+
+@router.post('/{claim_id}/validatedenialclaim', response_model=DenialClaimDetail, summary='Get claim details for denial validation')
+def validate_denial_claim(
+    claim_id: str,
+    current_user: UserSchema = Depends(get_current_user),
+    service: ClaimsService = Depends(_get_service),
+) -> DenialClaimDetail:
+    return service.validate_denial_claim(claim_id=claim_id, username=current_user.username)
 
 
 @router.post('/{claim_id}/send', response_model=SendResult, summary='Send a validated claim')

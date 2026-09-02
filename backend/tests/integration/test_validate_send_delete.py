@@ -1,6 +1,7 @@
 """Integration tests for validate / send / delete endpoints — 12 tests."""
 from __future__ import annotations
 
+import json
 import uuid
 from unittest.mock import MagicMock
 
@@ -142,6 +143,58 @@ def test_validate_fail_returns_error_list(client, auth_headers):
 def test_validate_requires_auth(client):
     r = client.post(f"/api/claims/{CLAIM_ID}/validate")
     assert r.status_code == 401
+
+
+# ── Denial validation details ─────────────────────────────────────────────────
+
+def test_denial_validation_returns_stored_procedure_json(client, auth_headers):
+    mock = _mock_db_valid()
+    json_column_name = "JSON_F52E2B61-18A1-11d1-B105-00805F49916B"
+    json_payload = json.dumps({
+        "ClaimId": CLAIM_ID,
+        "PatientName": "Doe, John",
+        "PayerName": "Medicare",
+        "PolicyId": "POL-123",
+        "InsuredPolicyNumber": "POL-123",
+        "ProviderNPI": "1234567890",
+        "IcdCode": "Z00.00",
+        "DiagnosisCode": "Z00.00",
+        "DiagnosisDescription": "General examination",
+        "ServiceLines": [{
+            "ServiceDateFrom": "2026-01-01",
+            "ProcedureCode": "99213",
+            "Modifier": "26",
+            "LineCharge": 100.0,
+            "DaysUnits": 1.0,
+            "PlaceOfService": "11",
+            "ProcedureMaster": {
+                "Procedure_Code": 99213,
+                "Procedure_Description": "Office visit",
+                "Possible_Modifiers": "25,26",
+            },
+            "ICDProcedureMappings": [{"Procedure_Code": "99213", "ICD10CM_Code": "Z00.00"}],
+        }],
+    })
+    split_at = len(json_payload) // 2
+    mock.execute_sp.return_value = [
+        {json_column_name: json_payload[:split_at]},
+        {json_column_name: json_payload[split_at:]},
+    ]
+    with _override_db(mock):
+        response = client.post(f"/api/claims/{CLAIM_ID}/validatedenialclaim", headers=auth_headers)
+
+    assert response.status_code == 200
+    assert response.json()["ClaimId"] == CLAIM_ID
+    assert response.json()["ServiceLines"][0]["ICDProcedureMappings"][0]["ICD10CM_Code"] == "Z00.00"
+
+
+def test_denial_validation_returns_404_for_missing_claim(client, auth_headers):
+    mock = _mock_db_valid()
+    mock.execute_sp.return_value = []
+    with _override_db(mock):
+        response = client.post(f"/api/claims/{CLAIM_ID}/validatedenialclaim", headers=auth_headers)
+
+    assert response.status_code == 404
 
 
 # ── Send ─────────────────────────────────────────────────────────────────────

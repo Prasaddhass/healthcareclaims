@@ -80,8 +80,8 @@ const ServiceLineRow: React.FC<ServiceLineRowProps> = ({ index, onRemove, canRem
           <FormField
             control={control}
             name={`serviceLines.${index}.diagnosisPointer`}
-            label="24E Dx Pointer"
-            placeholder="A"
+            label="24E Modifier"
+            placeholder="26"
             maxLength={4}
           />
         </Col>

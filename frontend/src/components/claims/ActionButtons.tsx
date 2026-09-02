@@ -6,7 +6,8 @@ import {
   EditOutlined,
   FileTextOutlined,
   RobotOutlined,
-  SendOutlined,
+  ScheduleFilled,
+  SendOutlined
 } from '@ant-design/icons';
 import type { ClaimSummary } from '@/types/claim.types';
 
@@ -18,6 +19,7 @@ interface ActionButtonsProps {
   onValidate: (id: string) => void;
   onSend: (claim: ClaimSummary) => void;
   onDocuments: (id: string) => void;
+  onDenialValidation: (claim: ClaimSummary) => void;
   onRunPipeline: (claim: ClaimSummary) => void;
 }
 
@@ -29,6 +31,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onValidate,
   onSend,
   onDocuments,
+  onDenialValidation,
   onRunPipeline,
 }) => {
   const isSent = claim.validation_status === 'Sent';
@@ -60,7 +63,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
       <Tooltip title="Run AI agent pipeline for automated processing">
         <Button icon={<RobotOutlined />} size="small" disabled={!canRunPipeline} aria-label="Run AI pipeline" onClick={() => onRunPipeline(claim)} data-testid={`pipeline-${claim.claim_id}`} />
+      </Tooltip> 
+
+      <Tooltip title="Check for Denial Validation">
+        <Button icon={<ScheduleFilled/>} size="small" onClick={() => onDenialValidation(claim)} data-testid={`denial-validation-${claim.claim_id}`} />
       </Tooltip>
+
     </Space>
   );
 };

@@ -1,10 +1,12 @@
 """ClaimsService — claim lifecycle management (US-002-10 / US-003-05)."""
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any, Optional
 
 from fastapi import HTTPException, status
+from pydantic import BaseModel, ConfigDict, Field
 
 from schemas.claim_schemas import (
     ClaimCreateRequest,
@@ -22,6 +24,63 @@ from schemas.claim_schemas import (
 from services.validation_engine import ClaimValidationEngine
 
 logger = logging.getLogger(__name__)
+
+
+class IcdProcedureMapping(BaseModel):
+    """ICD-10 code supported by a procedure."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    procedure_code: str = Field(alias="Procedure_Code")
+    icd10cm_code: str = Field(alias="ICD10CM_Code")
+
+
+class ProcedureMasterDetail(BaseModel):
+    """Procedure reference data returned with a denial claim service line."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    procedure_code: float = Field(alias="Procedure_Code")
+    procedure_description: str = Field(alias="Procedure_Description")
+    possible_modifiers: str = Field(alias="Possible_Modifiers")
+
+
+class DenialClaimServiceLine(BaseModel):
+    """Service-line detail returned by sp_GetClaimDetails_ByClaimId."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    service_date_from: str = Field(alias="ServiceDateFrom")
+    procedure_code: str = Field(alias="ProcedureCode")
+    modifier: Optional[str] = Field(default=None, alias="Modifier")
+    line_charge: float = Field(alias="LineCharge")
+    days_units: float = Field(alias="DaysUnits")
+    place_of_service: str = Field(alias="PlaceOfService")
+    procedure_master: ProcedureMasterDetail = Field(alias="ProcedureMaster")
+    icd_procedure_mappings: list[IcdProcedureMapping] = Field(
+        default_factory=list,
+        alias="ICDProcedureMappings",
+    )
+
+
+class DenialClaimDetail(BaseModel):
+    """Response payload returned by sp_GetClaimDetails_ByClaimId."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    claim_id: str = Field(alias="ClaimId")
+    patient_name: str = Field(alias="PatientName")
+    payer_name: str = Field(alias="PayerName")
+    policy_id: str = Field(alias="PolicyId")
+    insured_policy_number: str = Field(alias="InsuredPolicyNumber")
+    provider_npi: str = Field(alias="ProviderNPI")
+    icd_code: str = Field(alias="IcdCode")
+    diagnosis_code: str = Field(alias="DiagnosisCode")
+    diagnosis_description: str = Field(alias="DiagnosisDescription")
+    service_lines: list[DenialClaimServiceLine] = Field(
+        default_factory=list,
+        alias="ServiceLines",
+    )
 
 
 class ClaimsService:
@@ -288,6 +347,47 @@ class ClaimsService:
             validation_status=new_status,
             errors=[ValidationErrorDetail(**e.to_dict()) for e in errors],
         )
+
+    def validate_denial_claim(self, claim_id: str, username: str) -> DenialClaimDetail:
+        """Fetch and log the denial claim detail for the supplied claim ID."""
+        rows = self._db.execute_sp("sp_GetClaimDetails_ByClaimId", (claim_id,))
+        if not rows:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Claim {claim_id} not found",
+            )
+
+        json_column_names = tuple(rows[0])
+        if len(json_column_names) != 1 or any(tuple(row) != json_column_names for row in rows):
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Claim detail procedure returned an unexpected result shape",
+            )
+
+        json_column_name = json_column_names[0]
+        json_chunks = [row[json_column_name] for row in rows]
+        if not all(isinstance(chunk, str) for chunk in json_chunks):
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Claim detail procedure did not return a JSON payload",
+            )
+        # SQL Server can split FOR JSON output into multiple rows; reassemble it.
+        json_payload = "".join(json_chunks)
+
+        try:
+            claim_record = DenialClaimDetail.model_validate(json.loads(json_payload))
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Claim detail procedure returned an invalid JSON payload",
+            ) from exc
+        logger.info(
+            "Denial claim retrieved for claim_id=%s by username=%s: %s",
+            claim_id,
+            username,
+            claim_record,
+        )
+        return claim_record
 
     # ── Send ──────────────────────────────────────────────────────────────────
 

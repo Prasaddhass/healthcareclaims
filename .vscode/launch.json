@@ -19,7 +19,7 @@
       ],
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/.env",
-      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
       "console": "integratedTerminal",
       "justMyCode": true
     },
@@ -39,7 +39,7 @@
       ],
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/.env",
-      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
       "console": "integratedTerminal",
       "justMyCode": false
     },
@@ -57,7 +57,7 @@
       ],
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/.env",
-      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
       "console": "integratedTerminal",
       "justMyCode": false
     },
@@ -75,7 +75,7 @@
       ],
       "cwd": "${workspaceFolder}/backend",
       "envFile": "${workspaceFolder}/.env",
-      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
       "console": "integratedTerminal",
       "justMyCode": false
     },

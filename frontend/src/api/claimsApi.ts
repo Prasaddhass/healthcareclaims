@@ -37,6 +37,42 @@ export interface ValidationResult {
   errors: ValidationErrorItem[];
 }
 
+export interface IcdProcedureMapping {
+  Procedure_Code: string;
+  ICD10CM_Code: string;
+}
+
+export interface ProcedureMasterDetail {
+  Procedure_Code: number | string;
+  Procedure_Description: string;
+  Possible_Modifiers: string;
+}
+
+export interface DenialClaimServiceLine {
+  ServiceDateFrom: string;
+  ProcedureCode: string;
+  Modifier: string | null;
+  LineCharge: number;
+  DaysUnits: number;
+  PlaceOfService: string;
+  ProcedureMaster: ProcedureMasterDetail | null;
+  ICDProcedureMappings: IcdProcedureMapping[];
+}
+
+/** JSON response returned by sp_GetClaimDetails_ByClaimId. */
+export interface DenialClaimDetail {
+  ClaimId: string;
+  PatientName: string;
+  PayerName: string;
+  PolicyId: string;
+  InsuredPolicyNumber: string;
+  ProviderNPI: string;
+  IcdCode: string;
+  DiagnosisCode: string;
+  DiagnosisDescription: string;
+  ServiceLines: DenialClaimServiceLine[];
+}
+
 export interface SendResult {
   claim_id: string;
   validation_status: string;
@@ -213,6 +249,8 @@ export const claimsApi = {
   deleteClaim: (id: string): Promise<void> => api.delete(`/api/claims/${id}`).then(() => undefined),
 
   validateClaim: (id: string): Promise<ValidationResult> => api.post(`/api/claims/${id}/validate`).then((r) => r.data),
+
+  validateDenialClaim: (id: string): Promise<DenialClaimDetail> => api.post(`/api/claims/${id}/validatedenialclaim`).then((r) => r.data),
 
   sendClaim: (id: string): Promise<SendResult> => api.post(`/api/claims/${id}/send`).then((r) => r.data),
 

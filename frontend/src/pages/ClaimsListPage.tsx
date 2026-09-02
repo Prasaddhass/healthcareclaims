@@ -120,7 +120,7 @@ const ClaimsListPage: React.FC = () => {
       <ClaimsTable
         onDeleteRequest={setDeleteTarget}
         onSendRequest={setSendTarget}
-        onDocumentsRequest={setDocClaimId}
+        onDocumentsRequest={setDocClaimId}        
         onRunPipelineRequest={(claim) => void handleRunPipeline(claim)}
       />
 
