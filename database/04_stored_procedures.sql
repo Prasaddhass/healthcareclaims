@@ -612,5 +612,92 @@ BEGIN
 END;
 GO
 
+-- ============================================================    
+-- sp_GetClaimDetails by passing ClaimId for validating the claims for denials
+-- EXEC  sp_GetClaimDetails_ByClaimId '0484FF7E-221A-46F7-BD58-4DF0FEEDA7BA'
+-- ============================================================    
+CREATE OR ALTER PROCEDURE dbo.sp_GetClaimDetails_ByClaimId    
+    @ClaimId     uniqueidentifier  
+AS    
+BEGIN    
+    SET NOCOUNT ON;    
+    SET XACT_ABORT ON;    
+			SELECT
+			c.ClaimId,
+			c.PatientId AS PatientName,
+			c.InsuranceName AS PayerName,
+			c.PolicyId,
+			ClmFd.InsuredPolicyNumber,
+			ClmFd.BillingProviderNPI AS ProviderNPI,
+
+			-- One ClaimDiagnosis record
+			cd.IcdCode,
+			dm.DiagnosisCode,
+			dm.Description AS DiagnosisDescription,
+
+			-- Multiple Service Lines
+			JSON_QUERY(
+			(
+			SELECT
+				Csl.ServiceDateFrom,
+				Csl.ProcedureCode,
+				Csl.DiagnosisPointer AS Modifier,
+				Csl.LineCharge,
+				Csl.DaysUnits,
+				Csl.PlaceOfService,
+
+				-- Procedure Master
+				JSON_QUERY(
+					(
+						SELECT
+							pm.Procedure_Code,
+							pm.Procedure_Description,
+							pm.Possible_Modifiers
+						FROM Procedure_Master AS pm
+						WHERE pm.Procedure_Code = Csl.ProcedureCode
+						FOR JSON PATH,
+						WITHOUT_ARRAY_WRAPPER
+					)
+				) AS ProcedureMaster,
+
+				-- Multiple ICD Procedure Mappings
+				JSON_QUERY(
+					(
+						SELECT
+							ipm.Procedure_Code,
+							ipm.ICD10CM_Code
+						FROM ICD_Procedure_Mapping AS ipm
+						WHERE ipm.Procedure_Code = Csl.ProcedureCode
+						FOR JSON PATH
+					)
+				) AS ICDProcedureMappings
+
+			FROM ClaimServiceLines AS Csl
+			WHERE Csl.ClaimId = c.ClaimId
+
+			FOR JSON PATH
+			)
+			) AS ServiceLines
+
+			FROM Claims AS c
+
+			INNER JOIN ClaimFormData AS ClmFd
+			ON c.ClaimId = ClmFd.ClaimId
+
+			-- One diagnosis per Claim
+			LEFT JOIN ClaimDiagnosis AS cd
+			ON c.ClaimId = cd.ClaimId
+
+			LEFT JOIN Diagnosis_Master AS dm
+			ON cd.IcdCode = dm.DiagnosisCode
+
+			WHERE c.ClaimId = @ClaimId
+			AND c.IsDeleted = 0
+
+			FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;      
+          
+END; 
+GO
+
 PRINT 'All 15 stored procedures created (or updated).';
 GO
