@@ -12,13 +12,14 @@ from ai_service.rag.rag_engine import RAGEngine
 
 def test_load_pdf_returns_documents() -> None:
     page = MagicMock()
-    page.extract_text.return_value = 'PDF text'
+    page.extract_text.return_value = '13. Exclusions\n99213 is not covered.'
     reader = MagicMock()
     reader.pages = [page]
     with patch('ai_service.rag.document_loader.PdfReader', return_value=reader):
         docs = DocumentLoader().load_pdf('sample.pdf')
     assert len(docs) == 1
-    assert docs[0].page_content == 'PDF text'
+    assert docs[0].metadata['section'] == '13. Exclusions'
+    assert docs[0].page_content == '13. Exclusions\n99213 is not covered.'
 
 
 def test_load_csv_returns_row_documents() -> None:
@@ -59,11 +60,25 @@ def test_rag_engine_ingest_splits_and_persists() -> None:
 
 
 def test_rag_engine_retrieve_returns_payload() -> None:
-    document = Document(page_content='policy text', metadata={'source': 'policy.pdf'})
+    document = Document(
+        page_content='policy text',
+        metadata={'source': 'policy.pdf', 'page': 3, 'section': '13. Exclusions'},
+    )
     vector_store = MagicMock()
     vector_store.similarity_search_with_relevance_scores.return_value = [(document, 0.88)]
     settings = AISettings(OPENAI_API_KEY='key')
     with patch('ai_service.rag.rag_engine.get_embeddings', return_value=MagicMock()):
-        results = RAGEngine(settings=settings, vector_store=vector_store).retrieve('policy', top_k=2)
+        results = RAGEngine(settings=settings, vector_store=vector_store).retrieve(
+            'policy',
+            top_k=2,
+            metadata_filter={'claim_id': 'claim-123'},
+        )
     assert results[0]['source'] == 'policy.pdf'
     assert results[0]['relevance'] == 0.88
+    assert results[0]['section'] == '13. Exclusions'
+    assert results[0]['page'] == 3
+    vector_store.similarity_search_with_relevance_scores.assert_called_once_with(
+        'policy',
+        k=2,
+        filter={'claim_id': 'claim-123'},
+    )

@@ -4,7 +4,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { useNavigate } from 'react-router-dom';
 
 import type { ClaimSummary } from '@/types/claim.types';
-import type { DenialClaimDetail, DenialClaimServiceLine, ValidationErrorItem } from '@/api/claimsApi';
+import type { DenialClaimDetail, DenialClaimServiceLine, DenialReason, ValidationErrorItem } from '@/api/claimsApi';
 import { claimsApi } from '@/api/claimsApi';
 import { ROUTES } from '@/constants/routes';
 import { useClaimsStore } from '@/stores/useClaimsStore';
@@ -72,6 +72,18 @@ const ClaimsTable: React.FC<ClaimsTableProps> = ({
     { title: 'Units', dataIndex: 'DaysUnits', key: 'units' },
     { title: 'Place of Service', dataIndex: 'PlaceOfService', key: 'placeOfService' },
     {
+      title: 'Coverage',
+      dataIndex: 'IsServiceCovered',
+      key: 'coverage',
+      render: (value: boolean | null) => (value === null ? 'Not assessed' : value ? 'Covered' : 'Not covered'),
+    },
+    {
+      title: 'Matching Policy Sections',
+      dataIndex: 'CoverageSections',
+      key: 'coverageSections',
+      render: (sections: string[]) => sections.join(', ') || 'No exact procedure-code match',
+    },
+    {
       title: 'Procedure Description',
       dataIndex: 'ProcedureMaster',
       key: 'procedureDescription',
@@ -84,6 +96,16 @@ const ClaimsTable: React.FC<ClaimsTableProps> = ({
       render: (mappings: DenialClaimServiceLine['ICDProcedureMappings']) =>
         mappings.map((mapping) => mapping.ICD10CM_Code).join(', ') || '-',
     },
+  ];
+
+  const denialReasonColumns: ColumnsType<DenialReason> = [
+    { title: 'Reason', dataIndex: 'denialReason', key: 'reason' },
+    { title: 'Result', dataIndex: 'denialResult', key: 'result' },
+    { title: 'Document', dataIndex: ['SourceOrReference', 'PolicyDocumentFileReference'], key: 'document' },
+    { title: 'Page', dataIndex: ['SourceOrReference', 'PageNumberReference'], key: 'page' },
+    { title: 'Section', dataIndex: ['SourceOrReference', 'SectionReference'], key: 'section' },
+    { title: 'Relevance', dataIndex: ['SourceOrReference', 'RelevanceReference'], key: 'relevance' },
+    { title: 'Policy Text', dataIndex: ['SourceOrReference', 'TextReference'], key: 'text', ellipsis: true },
   ];
 
   const columns: ColumnsType<ClaimSummary> = [
@@ -174,6 +196,16 @@ const ClaimsTable: React.FC<ClaimsTableProps> = ({
               size="small"
               style={{ marginTop: 16 }}
             />
+            {denialClaim.denialReasons.length > 0 && (
+              <Table<DenialReason>
+                columns={denialReasonColumns}
+                dataSource={denialClaim.denialReasons.map((reason, index) => ({ ...reason, key: index }))}
+                pagination={false}
+                size="small"
+                style={{ marginTop: 16 }}
+                title={() => 'Possible Denial Reasons'}
+              />
+            )}
           </>
         )}
       </Modal>

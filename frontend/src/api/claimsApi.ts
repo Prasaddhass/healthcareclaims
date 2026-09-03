@@ -57,6 +57,22 @@ export interface DenialClaimServiceLine {
   PlaceOfService: string;
   ProcedureMaster: ProcedureMasterDetail | null;
   ICDProcedureMappings: IcdProcedureMapping[];
+  IsServiceCovered: boolean | null;
+  CoverageSections: string[];
+}
+
+export interface SourceOrReference {
+  PolicyDocumentFileReference: string;
+  PageNumberReference: number | null;
+  TextReference: string;
+  SectionReference: string;
+  RelevanceReference: string;
+}
+
+export interface DenialReason {
+  denialReason: string;
+  denialResult: string;
+  SourceOrReference: SourceOrReference;
 }
 
 /** JSON response returned by sp_GetClaimDetails_ByClaimId. */
@@ -71,6 +87,7 @@ export interface DenialClaimDetail {
   DiagnosisCode: string;
   DiagnosisDescription: string;
   ServiceLines: DenialClaimServiceLine[];
+  denialReasons: DenialReason[];
 }
 
 export interface SendResult {

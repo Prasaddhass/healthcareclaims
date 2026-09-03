@@ -3,10 +3,14 @@ from __future__ import annotations
 
 import argparse
 import csv
+import re
 from pathlib import Path
 
 from PyPDF2 import PdfReader
 from langchain_core.documents import Document
+
+
+SECTION_HEADING_PATTERN = re.compile(r'^\d+\.\s+.+')
 
 
 class DocumentLoader:
@@ -17,8 +21,43 @@ class DocumentLoader:
         for page_number, page in enumerate(reader.pages, start=1):
             text = (page.extract_text() or '').strip()
             if text:
-                docs.append(Document(page_content=text, metadata={'source': source.name, 'file_path': str(source), 'page': page_number}))
+                docs.extend(self._split_pdf_sections(text, source, page_number))
         return docs
+
+    @staticmethod
+    def _split_pdf_sections(text: str, source: Path, page_number: int) -> list[Document]:
+        """Keep each policy heading with its content for section-aware retrieval."""
+        documents: list[Document] = []
+        section = 'Uncategorized'
+        content: list[str] = []
+
+        def add_section() -> None:
+            section_text = '\n'.join(content).strip()
+            if section_text:
+                documents.append(
+                    Document(
+                        page_content=section_text,
+                        metadata={
+                            'source': source.name,
+                            'file_path': str(source),
+                            'page': page_number,
+                            'section': section,
+                        },
+                    )
+                )
+
+        for line in text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            if SECTION_HEADING_PATTERN.match(line):
+                add_section()
+                section = line
+                content = [line]
+            else:
+                content.append(line)
+        add_section()
+        return documents
 
     def load_csv(self, path: str) -> list[Document]:
         source = Path(path)

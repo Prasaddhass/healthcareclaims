@@ -51,9 +51,10 @@ const FileUploadZone: React.FC<FileUploadZoneProps> = ({ claimId, documentCount,
       onSuccess?.({}, new XMLHttpRequest());
       onUploaded();
       void message.success('Document uploaded successfully.');
-    } catch (error) {
+    } catch (error: unknown) {
       onError?.(error as Error);
-      void message.error('Document upload failed.');
+      const detail = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      void message.error(detail ?? 'Document upload failed.');
     }
   };
 

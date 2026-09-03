@@ -37,7 +37,6 @@ export const documentsApi = {
     formData.append('document_tag', documentTag);
     return api
       .post(`/api/claims/${claimId}/documents`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (event) => {
           if (!event.total || !onProgress) return;
           onProgress(Math.round((event.loaded / event.total) * 100));

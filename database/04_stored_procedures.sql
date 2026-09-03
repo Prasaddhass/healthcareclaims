@@ -509,7 +509,14 @@ CREATE OR ALTER PROCEDURE dbo.sp_GetDocuments
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT DocumentId, FileName, FileType, DocumentTag, FileSizeBytes, UploadedOn
+    SELECT
+        DocumentId,
+        FileName,
+        FilePath,
+        FileType,
+        DocumentTag,
+        FileSizeBytes,
+        UploadedOn
     FROM   dbo.ClaimDocuments
     WHERE  ClaimId = @ClaimId
     ORDER BY UploadedOn DESC;

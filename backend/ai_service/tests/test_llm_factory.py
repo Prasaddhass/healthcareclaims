@@ -3,17 +3,28 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
+from pydantic import SecretStr
 
 from ai_service.config import AISettings
 from ai_service.llm.llm_factory import get_llm
 
 
 def test_get_llm_returns_openai_client() -> None:
-    settings = AISettings(OPENAI_API_KEY='key', OPENAI_MODEL='gpt-4o-mini', LLM_PROVIDER='openai')
+    settings = AISettings(
+        OPENAI_API_KEY='key',
+        OPENAI_MODEL='gpt-4o-mini',
+        OPENAI_BASE_URL='https://example.com/v1',
+        LLM_PROVIDER='openai',
+    )
     with patch('ai_service.llm.llm_factory.ChatOpenAI', return_value='openai-client') as mocked:
         client = get_llm(settings)
     assert client == 'openai-client'
-    mocked.assert_called_once()
+    mocked.assert_called_once_with(
+        model='gpt-4o-mini',
+        api_key=SecretStr('key'),
+        base_url='https://example.com/v1',
+        temperature=0,
+    )
 
 
 def test_get_llm_returns_azure_client() -> None:

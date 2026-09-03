@@ -11,7 +11,12 @@ def get_llm(settings: AISettings | None = None) -> BaseChatModel:
     cfg = settings or ai_settings
     provider = cfg.LLM_PROVIDER.lower()
     if provider == 'openai':
-        return ChatOpenAI(model=cfg.OPENAI_MODEL, api_key=cfg.OPENAI_API_KEY, temperature=0)
+        return ChatOpenAI(
+            model=cfg.OPENAI_MODEL,
+            api_key=cfg.OPENAI_API_KEY,
+            base_url=cfg.OPENAI_BASE_URL or None,
+            temperature=0,
+        )
     if provider == 'azure':
         return AzureChatOpenAI(
             azure_endpoint=cfg.AZURE_ENDPOINT,

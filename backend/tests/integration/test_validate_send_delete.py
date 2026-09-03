@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import json
 import uuid
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
+from services.claims_service import ClaimsService, SourceOrReference
 from utils.jwt_utils import create_access_token
 
 
@@ -176,16 +177,46 @@ def test_denial_validation_returns_stored_procedure_json(client, auth_headers):
         }],
     })
     split_at = len(json_payload) // 2
-    mock.execute_sp.return_value = [
+    claim_detail_rows = [
         {json_column_name: json_payload[:split_at]},
         {json_column_name: json_payload[split_at:]},
     ]
-    with _override_db(mock):
+    policy_document_rows = [{
+        'DocumentId': 7,
+        'FileName': 'policy.pdf',
+        'FilePath': r'D:\uploads\policy.pdf',
+        'FileType': 'pdf',
+        'DocumentTag': 'PolicyDocument',
+    }]
+    mock.execute_sp.side_effect = [claim_detail_rows, policy_document_rows]
+    loader = MagicMock()
+    loader.load_pdf.return_value = [MagicMock(metadata={})]
+    rag = MagicMock()
+    rag.retrieve.return_value = [{
+        'text': 'Procedure 99213 is a covered service.',
+        'section': '3. Office Visit Benefits',
+        'source': 'policy.pdf',
+        'page': 1,
+        'relevance': 0.91,
+    }]
+    with (
+        _override_db(mock),
+        patch('ai_service.rag.document_loader.DocumentLoader', return_value=loader),
+        patch('ai_service.rag.rag_engine.RAGEngine', return_value=rag),
+    ):
         response = client.post(f"/api/claims/{CLAIM_ID}/validatedenialclaim", headers=auth_headers)
 
     assert response.status_code == 200
     assert response.json()["ClaimId"] == CLAIM_ID
     assert response.json()["ServiceLines"][0]["ICDProcedureMappings"][0]["ICD10CM_Code"] == "Z00.00"
+    assert response.json()["ServiceLines"][0]["IsServiceCovered"] is True
+    assert response.json()["ServiceLines"][0]["CoverageSections"] == ['3. Office Visit Benefits']
+    assert response.json()["denialReasons"] == []
+    rag.retrieve.assert_called_once_with(
+        '99213 exclusions limitations excluded services unpaid services non-covered services',
+        top_k=20,
+        metadata_filter={'claim_id': CLAIM_ID},
+    )
 
 
 def test_denial_validation_returns_404_for_missing_claim(client, auth_headers):
@@ -195,6 +226,79 @@ def test_denial_validation_returns_404_for_missing_claim(client, auth_headers):
         response = client.post(f"/api/claims/{CLAIM_ID}/validatedenialclaim", headers=auth_headers)
 
     assert response.status_code == 404
+
+
+def test_is_service_covered_returns_false_for_exclusion_evidence():
+    db = MagicMock()
+    db.execute_sp.return_value = [{
+        'DocumentId': 7,
+        'FileName': 'policy.pdf',
+        'FilePath': r'D:\uploads\policy.pdf',
+        'FileType': 'pdf',
+        'DocumentTag': 'PolicyDocument',
+    }]
+    loader = MagicMock()
+    loader.load_pdf.return_value = [MagicMock(metadata={})]
+    rag = MagicMock()
+    rag.retrieve.return_value = [{
+        'text': 'Exclusions: procedure code 99213 is a non-covered service and is not payable.',
+        'section': '13. Exclusions',
+        'source': 'policy.pdf',
+        'page': 3,
+        'relevance': 0.88,
+    }]
+
+    with (
+        patch('ai_service.rag.document_loader.DocumentLoader', return_value=loader),
+        patch('ai_service.rag.rag_engine.RAGEngine', return_value=rag),
+    ):
+        is_covered = ClaimsService(db).is_service_covered(CLAIM_ID, '99213')
+
+    assert is_covered is False
+
+
+@pytest.mark.parametrize(
+    ('section', 'expected_reason'),
+    [
+        ('13. Exclusions and Limitations', 'non-covered service'),
+        ('4. Prior Authorization Requirements for Services', 'prior-auth required'),
+        ('3. Covered Services', ''),
+    ],
+)
+def test_fetch_denial_section_matches_terms_within_policy_headings(section, expected_reason):
+    assert ClaimsService._fetch_denial_section(section) == expected_reason
+
+
+def test_denial_reason_includes_policy_reference():
+    reason = ClaimsService._to_denial_reasons([{
+        'source': 'SYN-009-BRZ_Value_Health.pdf',
+        'page': 3,
+        'text': 'Non-covered convenience services',
+        'section': '13. Exclusions',
+        'relevance': 0.56,
+    }])[0]
+
+    assert reason.denial_reason == 'ServiceNotCovered'
+    assert reason.denial_result == 'Yes'
+    assert reason.source_or_reference.model_dump(by_alias=True) == {
+        'PolicyDocumentFileReference': 'SYN-009-BRZ_Value_Health.pdf',
+        'PageNumberReference': 3,
+        'TextReference': 'Non-covered convenience services',
+        'SectionReference': '13. Exclusions',
+        'RelevanceReference': '0.56',
+    }
+
+
+def test_source_or_reference_formats_numeric_relevance():
+    reference = SourceOrReference(
+        PolicyDocumentFileReference='policy.pdf',
+        PageNumberReference=3,
+        TextReference='Non-covered service',
+        SectionReference='Exclusions',
+        RelevanceReference=0.5634435331800388,
+    )
+
+    assert reference.relevance_reference == '0.56'
 
 
 # ── Send ─────────────────────────────────────────────────────────────────────

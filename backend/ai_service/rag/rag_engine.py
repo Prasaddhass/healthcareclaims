@@ -36,14 +36,36 @@ class RAGEngine:
             persist()
         return len(chunks)
 
-    def retrieve(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
+    def replace_claim_documents(self, claim_id: str, docs: list[Document]) -> int:
+        """Replace a claim's indexed policy document chunks."""
+        self._vector_store.delete(where={'claim_id': claim_id})
+        return self.ingest(docs)
+
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 5,
+        metadata_filter: dict[str, str] | None = None,
+    ) -> list[dict[str, Any]]:
         try:
-            results = self._vector_store.similarity_search_with_relevance_scores(query, k=top_k)
+            results = self._vector_store.similarity_search_with_relevance_scores(
+                query,
+                k=top_k,
+                filter=metadata_filter,
+            )
         except Exception as exc:
             logger.error('RAG retrieval failed: %s', type(exc).__name__)
-            return []
+            raise RuntimeError('Vector search failed') from exc
         payload: list[dict[str, Any]] = []
         for document, score in results:
             source = document.metadata.get('source') or document.metadata.get('file_path') or 'unknown'
-            payload.append({'text': document.page_content, 'source': str(source), 'relevance': float(score)})
+            payload.append(
+                {
+                    'text': document.page_content,
+                    'source': str(source),
+                    'page': document.metadata.get('page'),
+                    'section': str(document.metadata.get('section', 'Uncategorized')),
+                    'relevance': float(score),
+                }
+            )
         return payload

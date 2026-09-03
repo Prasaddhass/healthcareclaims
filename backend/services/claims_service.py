@@ -1,12 +1,16 @@
 """ClaimsService — claim lifecycle management (US-002-10 / US-003-05)."""
 from __future__ import annotations
 
+
 import json
 import logging
+from operator import contains
+import re
 from typing import Any, Optional
 
 from fastapi import HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from rapidfuzz import fuzz
 
 from schemas.claim_schemas import (
     ClaimCreateRequest,
@@ -61,6 +65,37 @@ class DenialClaimServiceLine(BaseModel):
         default_factory=list,
         alias="ICDProcedureMappings",
     )
+    is_service_covered: bool | None = Field(default=None, alias="IsServiceCovered")
+    coverage_sections: list[str] = Field(default_factory=list, alias="CoverageSections")
+
+
+class SourceOrReference(BaseModel):
+    """Policy-document evidence supporting a possible denial."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    policy_document_file_reference: str = Field(alias="PolicyDocumentFileReference")
+    page_number_reference: int | None = Field(default=None, alias="PageNumberReference")
+    text_reference: str = Field(alias="TextReference")
+    section_reference: str = Field(alias="SectionReference")
+    relevance_reference: str | None = Field(default=None, alias="RelevanceReference")
+
+    @field_validator("relevance_reference", mode="before")
+    @classmethod
+    def format_relevance_reference(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        return f"{float(value):.2f}"
+
+
+class DenialReason(BaseModel):
+    """Possible denial and the policy evidence supporting it."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    denial_reason: str = Field(alias="denialReason")
+    denial_result: str = Field(alias="denialResult")
+    source_or_reference: SourceOrReference = Field(alias="SourceOrReference")
 
 
 class DenialClaimDetail(BaseModel):
@@ -80,6 +115,10 @@ class DenialClaimDetail(BaseModel):
     service_lines: list[DenialClaimServiceLine] = Field(
         default_factory=list,
         alias="ServiceLines",
+    )
+    denial_reasons: list[DenialReason] = Field(
+        default_factory=list,
+        alias="denialReasons",
     )
 
 
@@ -376,6 +415,30 @@ class ClaimsService:
 
         try:
             claim_record = DenialClaimDetail.model_validate(json.loads(json_payload))
+            # logic to construction denial_reasons object collection
+
+            denialReasonsResult = self._compose_denial_reasons(
+                    claim_record=claim_record,                    
+                )
+            claim_record.denial_reasons = denialReasonsResult
+
+            # for sl in claim_record.service_lines:
+            #     coverage_evidence = self._find_policy_coverage_evidence(
+            #         claim_id=claim_record.claim_id,
+            #         procedure_code=sl.procedure_code,
+            #     )
+            #     sl.coverage_sections = sorted(
+            #         {str(item["section"]) for item in coverage_evidence}
+            #     )
+            #     denial_evidence = [
+            #         item
+            #         for item in coverage_evidence
+            #         if self._is_denial_section(str(item["section"]))
+            #     ]
+            #     sl.is_service_covered = not denial_evidence
+            #     claim_record.denial_reasons.extend(
+            #         self._to_denial_reasons(denial_evidence)
+            #     )
         except (json.JSONDecodeError, ValueError) as exc:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
@@ -388,6 +451,239 @@ class ClaimsService:
             claim_record,
         )
         return claim_record
+
+    def is_service_covered(self, claim_id: str, procedure_code: str) -> bool:
+        """Return False when an exact procedure-code match is in a denial section."""
+        evidence = self._find_policy_coverage_evidence(claim_id, procedure_code)
+        return not any(
+            self._is_denial_section(str(item["section"]))
+            for item in evidence
+        )
+
+    @staticmethod
+    def _is_denial_section(section: str) -> bool:
+        normalized_section = section.lower()
+        denial_section_terms = (
+            "limitation",
+            "excluded service",
+            "exclusions",
+            "unpaid service",
+            "non-covered service",
+            "non covered service",
+            "not covered service",
+            "exclusion",
+        )
+        return any(term in normalized_section for term in denial_section_terms)
+
+   
+
+    def _compose_denial_reasons(
+        self,
+        claim_record: DenialClaimDetail,
+    ) -> list[DenialReason]:
+        resultantObject = [];
+
+        document_rows = self._db.execute_sp("sp_GetDocuments", (claim_record.claim_id,))
+        policy_documents = [
+            row
+            for row in document_rows
+            if str(row.get("DocumentTag", "")).lower() == "policydocument"
+            and str(row.get("FileType", "")).lower() == "pdf"
+            and row.get("FilePath")
+        ]
+
+        if not policy_documents:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=f"Claim {claim_record.claim_id} has no indexed PolicyDocument PDF for coverage validation",
+            )
+
+        try:
+            from ai_service.rag.document_loader import DocumentLoader
+            from ai_service.rag.rag_engine import RAGEngine
+            policy_pages = []
+            loader = DocumentLoader()
+            for document in policy_documents:
+                path = str(document["FilePath"])
+                for page in loader.load_pdf(path):
+                    page.metadata.update(
+                        {
+                            "claim_id": claim_record.claim_id,
+                            "document_id": str(document["DocumentId"]),
+                            "document_tag": "PolicyDocument",
+                        }
+                    )
+                    policy_pages.append(page)
+            if not policy_pages:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail=f"Claim {claim_record.claim_id} PolicyDocument PDFs contain no searchable text",
+                )
+
+            rag = RAGEngine()
+            rag.replace_claim_documents(claim_record.claim_id, policy_pages)
+
+            for sl in claim_record.service_lines:
+                evidence = rag.retrieve(
+                    (
+                        f"{sl.procedure_master.procedure_description} exclusions limitations excluded services "
+                        "unpaid services non-covered services"
+                    ),
+                    top_k=20,
+                    metadata_filter={"claim_id": claim_record.claim_id},
+                )
+
+                # logic to find out the section and construct the denial reason object collection
+                for doc in evidence:
+                    # Example logic to extract section and construct denial reason object
+                    # Determine the section
+                    
+                    section = doc["section"]
+                    denial_reason_section = self._fetch_denial_section(section)
+                    denialReason = DenialReason(
+                        denialReason=denial_reason_section,
+                        denialResult="No",
+                        SourceOrReference=SourceOrReference(
+                            PolicyDocumentFileReference=doc["source"], 
+                            PageNumberReference=doc["page"],
+                            TextReference=doc["text"],
+                            SectionReference=section,
+                            RelevanceReference=(doc["relevance"]),                            
+                        ),
+                    )
+                    denialReason.denial_result = "Yes" if float(doc["relevance"]) >= 0.5  else "No"
+                    if denialReason.denial_result == "Yes":
+                        resultantObject.append(denialReason)
+
+        except HTTPException:
+            raise
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Unable to search PolicyDocument PDFs for claim {claim_record.claim_id}",
+            ) from exc
+
+        return resultantObject
+
+    @staticmethod
+    def _fetch_denial_section(section: str) -> str:
+        denial_reason_section = ""
+        normalized_section = section.lower()
+        noncoveredservice_section_terms = (
+            "limitation",
+            "excluded service",
+            "exclusions",
+            "unpaid service",
+            "non-covered service",
+            "non covered service",
+            "not covered service",
+            "exclusion",
+        )
+        priorauthrequired_section_terms = (
+            "prior authorization",
+            "prior authorisation",
+            "pre authorization",
+            "pre authorisation",
+            "pre-authorization",
+            "pre-authorisation",
+            "pre-auth",
+            "prior authorization requirements",
+            "prior authorisation requirements",
+            "prior authorisation conditions"                        
+        )
+
+
+
+        if any(
+            fuzz.partial_ratio(term, normalized_section) * 100 >= 90
+            for term in noncoveredservice_section_terms
+        ):
+            denial_reason_section = "non-covered service"
+        elif any(
+            fuzz.partial_ratio(term, normalized_section) * 100 >= 90
+            for term in priorauthrequired_section_terms
+        ):
+            denial_reason_section = "prior-auth required"
+        else:
+                    denial_reason_section = ""
+        return denial_reason_section
+   
+        
+    def _find_policy_coverage_evidence(
+        self,
+        claim_id: str,
+        procedure_code: str,
+    ) -> list[dict[str, Any]]:
+        """Find exact procedure-code matches in claim-scoped policy sections."""
+        procedure_code = procedure_code.strip()
+        if not procedure_code:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Procedure code is required for coverage validation",
+            )
+
+        document_rows = self._db.execute_sp("sp_GetDocuments", (claim_id,))
+        policy_documents = [
+            row
+            for row in document_rows
+            if str(row.get("DocumentTag", "")).lower() == "policydocument"
+            and str(row.get("FileType", "")).lower() == "pdf"
+            and row.get("FilePath")
+        ]
+        if not policy_documents:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=f"Claim {claim_id} has no indexed PolicyDocument PDF for coverage validation",
+            )
+
+        try:
+            from ai_service.rag.document_loader import DocumentLoader
+            from ai_service.rag.rag_engine import RAGEngine
+
+            policy_pages = []
+            loader = DocumentLoader()
+            for document in policy_documents:
+                path = str(document["FilePath"])
+                for page in loader.load_pdf(path):
+                    page.metadata.update(
+                        {
+                            "claim_id": claim_id,
+                            "document_id": str(document["DocumentId"]),
+                            "document_tag": "PolicyDocument",
+                        }
+                    )
+                    policy_pages.append(page)
+
+            if not policy_pages:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail=f"Claim {claim_id} PolicyDocument PDFs contain no searchable text",
+                )
+
+            rag = RAGEngine()
+            rag.replace_claim_documents(claim_id, policy_pages)
+            evidence = rag.retrieve(
+                (
+                    f"{procedure_code} exclusions limitations excluded services "
+                    "unpaid services non-covered services"
+                ),
+                top_k=20,
+                metadata_filter={"claim_id": claim_id},
+            )
+        except HTTPException:
+            raise
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Unable to search PolicyDocument PDFs for claim {claim_id}",
+            ) from exc
+
+        procedure_pattern = re.compile(rf"(?<![A-Z0-9]){re.escape(procedure_code.upper())}(?![A-Z0-9])")
+        return [
+            item
+            for item in evidence
+            if procedure_pattern.search(str(item["text"]).upper())
+        ]
 
     # ── Send ──────────────────────────────────────────────────────────────────
 
