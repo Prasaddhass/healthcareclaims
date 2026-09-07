@@ -188,6 +188,43 @@ const ClaimsTable: React.FC<ClaimsTableProps> = ({
                 {denialClaim.DiagnosisCode} - {denialClaim.DiagnosisDescription}
               </Descriptions.Item>
             </Descriptions>
+            {denialClaim.EOB_calculation && (
+              <Descriptions
+                bordered
+                column={3}
+                size="small"
+                style={{ marginTop: 16 }}
+                title="EOB Calculation - if there is no denial"
+              >
+                <Descriptions.Item label="Date of Service">
+                  {denialClaim.EOB_calculation.DateOfService}
+                </Descriptions.Item>
+                <Descriptions.Item label="Procedure Code">
+                  {denialClaim.EOB_calculation.ProcedureCode}
+                </Descriptions.Item>
+                <Descriptions.Item label="Provider Type">
+                  {denialClaim.EOB_calculation.TypeOfProvider}
+                </Descriptions.Item>
+                <Descriptions.Item label="Billed Amount">
+                  {denialClaim.EOB_calculation.BilledAmount.toFixed(2)}
+                </Descriptions.Item>
+                <Descriptions.Item label="Allowed Amount">
+                  {denialClaim.EOB_calculation.AllowedAmount.toFixed(2)}
+                </Descriptions.Item>
+                <Descriptions.Item label="Patient Coinsurance">
+                  {denialClaim.EOB_calculation.PatientCoinsurance.toFixed(2)}
+                </Descriptions.Item>
+                <Descriptions.Item label="Insurance Payment">
+                  {denialClaim.EOB_calculation.InsurancePayment.toFixed(2)}
+                </Descriptions.Item>
+                <Descriptions.Item label="Contractual Adjustment">
+                  {denialClaim.EOB_calculation.ContractualAdjustment.toFixed(2)}
+                </Descriptions.Item>
+                <Descriptions.Item label="Patient Responsibility">
+                  {denialClaim.EOB_calculation.PatientResponsibility.toFixed(2)}
+                </Descriptions.Item>
+              </Descriptions>
+            )}
             <Table<DenialClaimServiceLine>
               columns={denialServiceLineColumns}
               dataSource={denialClaim.ServiceLines.map((line, index) => ({ ...line, key: `${line.ProcedureCode}-${index}` }))}

@@ -11,6 +11,7 @@ from typing import Any, Optional
 from fastapi import HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from rapidfuzz import fuzz
+from sqlalchemy import modifier
 
 from schemas.claim_schemas import (
     ClaimCreateRequest,
@@ -95,7 +96,23 @@ class DenialReason(BaseModel):
 
     denial_reason: str = Field(alias="denialReason")
     denial_result: str = Field(alias="denialResult")
-    source_or_reference: SourceOrReference = Field(alias="SourceOrReference")
+    source_or_reference: SourceOrReference | None = Field(default=None, alias="SourceOrReference")
+
+
+class EobCalculation(BaseModel):
+    """Explanation of benefits amounts calculated for the claim."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    date_of_service: str = Field(alias="DateOfService")
+    procedure_code: str = Field(alias="ProcedureCode")
+    billed_amount: float = Field(alias="BilledAmount")
+    allowed_amount: float = Field(alias="AllowedAmount")
+    patient_coinsurance: float = Field(alias="PatientCoinsurance")
+    insurance_payment: float = Field(alias="InsurancePayment")
+    contractual_adjustment: float = Field(alias="ContractualAdjustment")
+    patient_responsibility: float = Field(alias="PatientResponsibility")
+    type_of_provider: str = Field(alias="TypeOfProvider")
 
 
 class DenialClaimDetail(BaseModel):
@@ -119,6 +136,10 @@ class DenialClaimDetail(BaseModel):
     denial_reasons: list[DenialReason] = Field(
         default_factory=list,
         alias="denialReasons",
+    )
+    eob_calculation: EobCalculation | None = Field(
+        default=None,
+        alias="EOB_calculation",
     )
 
 
@@ -420,7 +441,31 @@ class ClaimsService:
             denialReasonsResult = self._compose_denial_reasons(
                     claim_record=claim_record,                    
                 )
+            #claim_record.denial_reasons = denialReasonsResult
+
+            # logic for Other denials - Inconsistent modifier
+            modifier = claim_record.service_lines[0].modifier
+            possible_modifiers = claim_record.service_lines[0].procedure_master.possible_modifiers
+
+            allowed_modifiers = {value.strip() for value in possible_modifiers.split(",")}
+            is_modifier_allowed = modifier in allowed_modifiers if modifier else False
+
+            if(not is_modifier_allowed):
+                otherDenialReason = DenialReason(
+                                    denialReason=f"Incorrect Modifier - {claim_record.service_lines[0].modifier} with Procedure code - {claim_record.service_lines[0].procedure_code}",
+                                    denialResult="Yes" if not is_modifier_allowed else "No",
+                                    SourceOrReference= None,                            
+                                )
+            if(not is_modifier_allowed):               
+                denialReasonsResult.append(otherDenialReason)
+
             claim_record.denial_reasons = denialReasonsResult
+
+            # logic for EOB Calculation
+            claim_record.eob_calculation = self._compose_eob_calculation(
+                                claim_record=claim_record,                    
+                            )
+             
 
             # for sl in claim_record.service_lines:
             #     coverage_evidence = self._find_policy_coverage_evidence(
@@ -564,6 +609,41 @@ class ClaimsService:
             ) from exc
 
         return resultantObject
+
+    def _compose_eob_calculation(
+            self,
+            claim_record: DenialClaimDetail,
+        ) -> EobCalculation | None:
+            eob = None
+
+            try:
+                
+                for sl in claim_record.service_lines:
+                    
+                    # Example logic to compose EOB calculation for each service line
+                    # This is a placeholder and should be replaced with actual calculation logic
+                    eob = EobCalculation(
+                        DateOfService=sl.service_date_from,
+                        ProcedureCode=sl.procedure_code,
+                        BilledAmount=sl.line_charge,
+                        AllowedAmount=sl.line_charge * 0.8,  # Example calculation
+                        PatientCoinsurance=sl.line_charge * 0.2,  # Example calculation
+                        InsurancePayment=sl.line_charge * 0.8,  # Example calculation
+                        ContractualAdjustment=sl.line_charge * 0.2,  # Example calculation
+                        PatientResponsibility=sl.line_charge * 0.0,  # Example calculation
+                        TypeOfProvider="Network Provider",  # Placeholder
+                    )
+                return eob
+    
+            except HTTPException:
+                raise
+            except (OSError, RuntimeError, ValueError) as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"Unable to search PolicyDocument PDFs for claim {claim_record.claim_id}",
+                ) from exc
+    
+            return resultantObject
 
     @staticmethod
     def _fetch_denial_section(section: str) -> str:

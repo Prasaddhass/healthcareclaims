@@ -161,6 +161,17 @@ def test_denial_validation_returns_stored_procedure_json(client, auth_headers):
         "IcdCode": "Z00.00",
         "DiagnosisCode": "Z00.00",
         "DiagnosisDescription": "General examination",
+        "EOB_calculation": {
+            "DateOfService": "2026-08-01",
+            "ProcedureCode": "99213",
+            "BilledAmount": 100.00,
+            "AllowedAmount": 80.00,
+            "PatientCoinsurance": 16.00,
+            "InsurancePayment": 54.00,
+            "ContractualAdjustment": 20.00,
+            "PatientResponsibility": 0,
+            "TypeOfProvider": "Network",
+        },
         "ServiceLines": [{
             "ServiceDateFrom": "2026-01-01",
             "ProcedureCode": "99213",
@@ -208,6 +219,17 @@ def test_denial_validation_returns_stored_procedure_json(client, auth_headers):
 
     assert response.status_code == 200
     assert response.json()["ClaimId"] == CLAIM_ID
+    assert response.json()["EOB_calculation"] == {
+        "DateOfService": "2026-08-01",
+        "ProcedureCode": "99213",
+        "BilledAmount": 100.0,
+        "AllowedAmount": 80.0,
+        "PatientCoinsurance": 16.0,
+        "InsurancePayment": 54.0,
+        "ContractualAdjustment": 20.0,
+        "PatientResponsibility": 0.0,
+        "TypeOfProvider": "Network",
+    }
     assert response.json()["ServiceLines"][0]["ICDProcedureMappings"][0]["ICD10CM_Code"] == "Z00.00"
     assert response.json()["ServiceLines"][0]["IsServiceCovered"] is True
     assert response.json()["ServiceLines"][0]["CoverageSections"] == ['3. Office Visit Benefits']

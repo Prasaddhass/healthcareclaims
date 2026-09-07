@@ -75,6 +75,18 @@ export interface DenialReason {
   SourceOrReference: SourceOrReference;
 }
 
+export interface EobCalculation {
+  DateOfService: string;
+  ProcedureCode: string;
+  BilledAmount: number;
+  AllowedAmount: number;
+  PatientCoinsurance: number;
+  InsurancePayment: number;
+  ContractualAdjustment: number;
+  PatientResponsibility: number;
+  TypeOfProvider: string;
+}
+
 /** JSON response returned by sp_GetClaimDetails_ByClaimId. */
 export interface DenialClaimDetail {
   ClaimId: string;
@@ -88,6 +100,7 @@ export interface DenialClaimDetail {
   DiagnosisDescription: string;
   ServiceLines: DenialClaimServiceLine[];
   denialReasons: DenialReason[];
+  EOB_calculation: EobCalculation | null;
 }
 
 export interface SendResult {
